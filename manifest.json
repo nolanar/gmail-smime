@@ -1,0 +1,19 @@
+{
+	"manifest_version": 2,
+	"name": "Gmail S/MIME",
+	"description": "Gmail extension for S/MIME encryption",
+	"version": "0.1",
+	"permissions": [
+		"https://mail.google.com/",
+		"https://inbox.google.com/"
+	],
+	"content_scripts" : [
+		{
+			"matches": ["https://mail.google.com/*", "https://inbox.google.com/*"],
+			"js": ["lib/inboxsdk.js", "build/js/app.min.js"]
+		}
+	],
+	"web_accessible_resources": [
+		"res/*"
+	]
+}

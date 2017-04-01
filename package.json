@@ -1,0 +1,22 @@
+{
+  "name": "gmail-smime",
+  "version": "0.0.0",
+  "description": "Gmail extension for S/MIME encryption",
+  "main": "content.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "gmail",
+    "S/MIME"
+  ],
+  "author": "Aran Nolan",
+  "license": "MIT",
+  "devDependencies": {
+    "rollup": "^0.41.6",
+    "rollup-plugin-commonjs": "^8.0.2",
+    "rollup-plugin-eslint": "^3.0.0",
+    "rollup-plugin-node-resolve": "^2.1.1",
+    "rollup-plugin-uglify": "^1.0.1"
+  }
+}
