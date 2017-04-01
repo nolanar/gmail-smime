@@ -33,12 +33,29 @@ function messageViewHandler(composeView) {
 	let attachments = composeView.getFileAttachmentCardViews();
 	// console.log(attachments);
 	let attach = attachments[0];
+	let filename = attach.getTitle();
+	let file_ext = filename.substr((~-filename.lastIndexOf('.') >>> 0) + 2);
 
-	attach.addButton({
-		tooltip: 'Decrypt Message',
-		iconUrl: chrome.runtime.getURL('icon-lock.png'),
-		onClick: event => {
-			event.getDownloadURL().then(url => {window.alert(url);});
-		}
-	});
+	if (file_ext === 'p7m') {
+		console.log('Encrypted message detected');
+		attach.getDownloadURL().then(url => {
+			
+			fetch(url).then(response => {
+				if (response.ok) return response.arrayBuffer();
+				throw new Error(response.status);
+			}).then(data => {
+				window.alert(data);
+			}).catch(err => {
+				console.warn('Looks like there was a problem. Status Code: ' + err.message);
+			});
+		});
+	}
+
+	// attach.addButton({
+	// 	tooltip: 'Decrypt Message',
+	// 	iconUrl: chrome.runtime.getURL('icon-lock.png'),
+	// 	onClick: event => {
+	// 		event.getDownloadURL().then(url => {window.alert(url);});
+	// 	}
+	// });
 }

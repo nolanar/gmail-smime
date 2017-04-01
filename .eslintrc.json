@@ -8,6 +8,7 @@
 		"sourceType": "module"
 	},
 	"rules": {
+		"no-console": "off",
 		"indent": [
 			"error",
 			"tab"
@@ -28,6 +29,7 @@
 	"globals": {
 		"ENV": true,
 		"chrome": true,
+		"console": true,
 		"InboxSDK": true
 	}
 }

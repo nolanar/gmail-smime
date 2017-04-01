@@ -4,6 +4,7 @@
 	"description": "Gmail extension for S/MIME encryption",
 	"version": "0.1",
 	"permissions": [
+		"https://mail-attachment.googleusercontent.com/*",
 		"https://mail.google.com/",
 		"https://inbox.google.com/"
 	],
