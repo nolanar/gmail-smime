@@ -6,15 +6,17 @@
 	"permissions": [
 		"https://mail-attachment.googleusercontent.com/*",
 		"https://mail.google.com/",
-		"https://inbox.google.com/"
+		"https://inbox.google.com/",
+		"storage"
 	],
 	"content_scripts" : [
 		{
 			"matches": ["https://mail.google.com/*", "https://inbox.google.com/*"],
-			"js": ["lib/inboxsdk.js", "build/js/app.min.js"]
+			"js": ["lib/js/inboxsdk.js", "build/js/app.min.js"]
 		}
 	],
 	"web_accessible_resources": [
 		"res/*"
-	]
+	],
+	"options_page": "src/options.html"
 }
