@@ -17,21 +17,6 @@ InboxSDK.load('1.0', 'sdk_gmail-smime_9187cbd76a', loadOptions).then(sdk => {
 	sdk.Compose.registerComposeViewHandler(composeViewHandler);
 	sdk.Conversations.registerMessageViewHandler(messageViewHandler);
 
-	store.set({'keys': ['boom', 'bop', 'wam']});
-
-	const routeID = 'helloWorld/:country';
-
-	sdk.Router.handleCustomRoute(routeID, buildManageSecurityPage);
-	sdk.NavMenu.addNavItem({
-		name: 'Hello Canada',
-		routeID: routeID,
-		routeParams: {country: 'Canada'}
-	});
-
-	sdk.Widgets.showModalView({title: 'Nice!'});
-
-	// test();
-
 });
 
 // action to take when a compose view is created
@@ -48,7 +33,10 @@ function composeViewHandler(composeView) {
 			blob.name = 'encrypted.asc';
 			// compView.setBodyText(subject);
 			compView.attachInlineFiles([blob]);
-		}
+		},
+		hasDropdown: true,
+		type: 'MODIFIER',
+		orderHint: 0
 	});
 }
 
@@ -101,11 +89,11 @@ function messageViewHandler(composeView) {
 	}
 
 	// attach.addButton({
-	// 	tooltip: 'Decrypt Message',
-	// 	iconUrl: chrome.runtime.getURL('icon-lock.png'),
-	// 	onClick: event => {
-	// 		event.getDownloadURL().then(url => {window.alert(url);});
-	// 	}
+	//  tooltip: 'Decrypt Message',
+	//  iconUrl: chrome.runtime.getURL('icon-lock.png'),
+	//  onClick: event => {
+	//      event.getDownloadURL().then(url => {window.alert(url);});
+	//  }
 	// });
 }
 
@@ -150,7 +138,6 @@ function test() {
 	
 	cmsEnvelopedSimp.decrypt(0,
 		{
-			recipientCertificate: certSimpl,
 			recipientPrivateKey: privateKeyBuffer
 		}).then(
 		result => { document.getElementById('decrypted_content').innerHTML = arrayBufferToString(result); },
@@ -160,14 +147,14 @@ function test() {
 
 function buildManageSecurityPage(customRouteView) {
 	// store.get('keys', item => {
-	// 	const keys = item.keys;
-	// 	let content = '<ul>';
-	// 	for (let i = 0; i < keys.length; i++) {
-	// 		content += '<li>' + keys[i] + '</li>';
-	// 	}
-	// 	content += '</ul>';
-	// 	content += '<button type="button" onClick="alert(\'WOW\')">Click Me!</button>';
-	// 	customRouteView.getElement().innerHTML = content;
+	//  const keys = item.keys;
+	//  let content = '<ul>';
+	//  for (let i = 0; i < keys.length; i++) {
+	//      content += '<li>' + keys[i] + '</li>';
+	//  }
+	//  content += '</ul>';
+	//  content += '<button type="button" onClick="alert(\'WOW\')">Click Me!</button>';
+	//  customRouteView.getElement().innerHTML = content;
 	// });
 
 	// build html content

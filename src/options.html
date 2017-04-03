@@ -3,23 +3,87 @@
 	<head>
 		<!-- BOOTSTRAP -->
 		<!-- Latest compiled and minified CSS -->
-		<link rel="stylesheet" href="/lib/css/bootstrap-3.3.7.min.css">
+		<link rel="stylesheet" href="/lib/css/bootstrap.min.css">
 		<!-- Optional theme -->
-		<link rel="stylesheet" href="/lib/css/bootstrap-3.3.7-theme.min.css">
-	
+		<!-- <link rel="stylesheet" href="/lib/css/bootstrap-theme.min.css"> -->
+		<!-- Bootstrap table extension -->
+		<link rel="stylesheet" href="/lib/css/bootstrap-table.min.css">
+		<style type="text/css">
+			body { padding-top: 70px; }
+		</style>
+
 	</head>
 	<body>
 		
 		<div class="container">
-			<div class="row">
-				<h1>Title</h1>
-				<a id="test">test</a>
+			<nav class="navbar navbar-default navbar-fixed-top">
+				<div class="container">
+
+					<div class="navbar-header">
+						<a class="navbar-brand" href="#">Gmail S/MIME</a>
+					</div>
+
+		      <ul class="nav navbar-nav navbar-right">
+	        	<li><a href="#">View on GitHub</a></li>
+	        </ul>
+				
+				</div>
+			</nav>
+
+			<div class="col-sm-12">			
+
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">Account</h3>
+					</div>
+					<div class="panel-body">
+
+					</div>
+				</div>
+
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">Certificates</h3>
+					</div>
+					<div class="panel-body">
+						<div id="toolbar">
+							<button id="addButton" class="btn btn-success">
+								<span class="glyphicon glyphicon-plus"></span> Add
+							</button>
+							<button id="deleteButton" class="btn btn-danger" disabled="true">
+								<span class="glyphicon glyphicon-remove"></span> Delete
+							</button>
+						</div>
+						<table id="certTable"
+								data-pagination="true"
+								data-search="true"
+								data-show-refresh="true"
+								data-show-columns="true"
+								data-toolbar="#toolbar"
+								data-resizable="true">
+							</table>
+					</div>
+				</div>
+
+				<div class="panel panel-default">
+					<div class="panel-heading">
+						<h3 class="panel-title">Utilities</h3>
+					</div>
+					<div class="panel-body">
+						<ul class=>
+						Todo: add key pair generation, sign request
+						</ul>
+					</div>
+				</div>
+
+			</div>
 			</div>
 		</div>
 
 		<!-- load scripts at end of page for preformance -->
-		<script src="/lib/js/jquery-3.2.0.min.js"></script>
-		<script src="/lib/js/bootstrap-3.3.7.min.js"></script>
+		<script src="/lib/js/jquery.min.js"></script>
+		<script src="/lib/js/bootstrap.min.js"></script>
+		<script src="/lib/js/bootstrap-table.min.js"></script>
 
 		<!-- my js -->
 		<script src="/src/options.js"></script>
