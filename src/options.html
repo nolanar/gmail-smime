@@ -54,12 +54,13 @@
 						</ul>
 
 						<div id="toolbar">
-							<button id="addButton" class="btn btn-success">
+							<label id="addButton" class="btn btn-success btn-file">
 								<span class="glyphicon glyphicon-plus"></span> Add
-							</button>
-							<button id="deleteButton" class="btn btn-danger" disabled="true">
+								<input id="addCertFile" type="file" style="display: none;">
+							</label>
+							<label id="deleteButton" class="btn btn-danger" disabled>
 								<span class="glyphicon glyphicon-remove"></span> Delete
-							</button>
+							</label>
 						</div>
 
 						<table id="certTable"
@@ -76,6 +77,7 @@
 								<tr>
 									<th data-field="state" data-checkbox="true"></th>
 									<th data-field="name" data-sortable="true">Certificate Name</th>
+									<th data-field="issuer" data-sortable="true">Issuer</th>
 									<th data-field="serial" data-sortable="true">Serial Number</th>
 									<th data-field="begin" data-sortable="true">Begins On</th>
 									<th data-field="expire" data-sortable="true">Expires On</th>

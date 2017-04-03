@@ -1,6 +1,6 @@
 import * as asn1js from 'asn1js';
 import {Certificate, EnvelopedData, ContentInfo} from 'pkijs';
-import {arrayBufferToString, stringToArrayBuffer, utilConcatBuf} from 'pvutils';
+import {arrayBufferToString, stringToArrayBuffer, bufferToHexCodes} from 'pvutils';
 
 // run content js, or options page js
 // check for InboxSDK
@@ -36,7 +36,6 @@ function contentMain() {
 				const compView = event.composeView;
 				// event.composeView.insertTextIntoBodyAtCursor('Hello World!');
 				const subject = compView.getTextContent();
-				console.log(subject);
 				const blob = new Blob([subject], {type: 'text/html'});
 				blob.name = 'encrypted.asc';
 				// compView.setBodyText(subject);
@@ -51,7 +50,6 @@ function contentMain() {
 	// action to take when a message is opened
 	function messageViewHandler(composeView) {
 		const attachments = composeView.getFileAttachmentCardViews();
-		// console.log(attachments);
 		const attach = attachments[0];
 		const filename = attach.getTitle();
 		const fileExt = filename.substr((~-filename.lastIndexOf('.') >>> 0) + 2);
@@ -189,13 +187,16 @@ function optionsMain() {
 	// variables
 	let certType;
 	let selections = [];
+	let deleteEnabled;
+
+	function updateDeleteButtonState() {
+		deleteEnabled = $table.bootstrapTable('getSelections').length > 0;
+		$button.attr('disabled', !deleteEnabled);
+	}
 
 	$(() => {
 		$table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', () => {
-			$button.prop('disabled', !$table.bootstrapTable('getSelections').length);
-			// save your data, here just save the current page
-			// selections = getIdSelections();
-			// push or splice the selections if you want to save all data selections
+			updateDeleteButtonState();
 		});
 	});
 
@@ -220,34 +221,160 @@ function optionsMain() {
 			} else {
 				$table.bootstrapTable('removeAll');
 			}
+			
+			updateDeleteButtonState();
+			$table.bootstrapTable('hideLoading');
 		});
-		$table.bootstrapTable('hideLoading');
 	}
 
 	// delete cert button
 	$(() => {
 		$button.click(() => {
-			bootbox.confirm('Are you sure you want to delete these?', result => {
-				if (result) {
+			if (deleteEnabled) {
+				bootbox.confirm('Are you sure you want to delete these?', result => {
+					if (result) {
 
-					const ids = $.map($table.bootstrapTable('getSelections'), row => {return row.name;});
-					$table.bootstrapTable('remove', {field: 'name', values: ids});
-					$button.prop('disabled', !$table.bootstrapTable('getSelections').length);
+						const ids = $.map($table.bootstrapTable('getSelections'), row => {return row.name;});
+						$table.bootstrapTable('remove', {field: 'name', values: ids});
+						updateDeleteButtonState();
 
-					storage.get(certType, result => {
-						const itemsOld = result[certType];
-						const itemsNew = itemsOld.filter(item => {
-							return !ids.includes(item.name);
+						storage.get(certType, result => {
+							const itemsOld = result[certType];
+							const itemsNew = itemsOld.filter(item => {
+								return !ids.includes(item.name);
+							});
+
+							if (itemsNew.length > 0) {
+								storage.set({[certType]: itemsNew});
+							} else {
+								storage.remove(certType);
+							}
 						});
-
-						if (itemsNew.length > 0) {
-							storage.set({[certType]: itemsNew});
-						} else {
-							storage.remove(certType);
-						}
-					});
-				}
-			});
+					}
+				});
+			}
 		});
 	});
+
+	$(document).on('change', '#addCertFile', function() {
+		const input = $(this);
+		let files = input.get(0).files;
+		if (input.get(0).files.length > 0) {
+			const file = input.get(0).files[0];
+
+			const reader = new FileReader();
+			reader.onload = event => {
+				const certContent = event.target.result;
+				// parse the cert and get cert object
+				try {
+					const parsedCert = parseCert(certContent);
+					storeCert(parsedCert);
+				} catch (err) {
+					bootbox.alert({ 
+						title: 'Error',
+						message: 
+								'<p class="lead">File not a valid X.509 Certificate</p>' +
+								`<em>${err.message}</em>`
+					});
+				}
+			};
+			reader.readAsText(file);
+		}
+		// clear selected file
+		$(this).val('');
+	});
+
+	// store a parsed cert object
+	function storeCert(parsedCert) {
+		storage.get(certType, result => {
+			let items = result[certType];
+
+			// check if common name already stored & allow to replace if so
+			let storeFlag = true;
+			if (typeof items === 'undefined') {
+				items = [parsedCert];
+			} else {
+				const index = items.findIndex(e => e.name === parsedCert.name);
+				if (index >= 0) {
+					bootbox.confirm({
+						message: `A certificate for ${parsedCert.name} already exists. Do you want to overwrite it?`,
+						buttons: {
+							confirm: {label: 'Yes', className: 'btn-success'},
+							cancel: {label: 'No', className: 'btn-danger'}
+						},
+						callback: result => {
+							if (result) items[index] = parsedCert;
+							else storeFlag = false;
+						}
+					});
+				} else {
+					items.push(parsedCert);
+				}
+			}
+
+			if (storeFlag) {
+				storage.set({[certType]: items});
+				// reload table
+				selectCertTable(certType);
+			}
+		});
+	}
+}
+
+////////////////////////////////////////////
+//  Crypto util functions
+////////////////////////////////////////////
+
+function parseCert(rawCert) {
+	const asciiCert = rawCert.replace(/(-----(BEGIN|END)( NEW)? CERTIFICATE-----|\n)/g, '');
+	const certBuffer = stringToArrayBuffer(atob(asciiCert));
+
+	let asn1 = asn1js.fromBER(certBuffer);
+	const cert = new Certificate({ schema: asn1.result });
+	console.log(cert);
+
+	const subject = cert.subject.typesAndValues;
+	const issuer = cert.issuer.typesAndValues;
+
+	const commonName = getCertValueFromType(subject, 'CN');
+	const issuerName = getCertValueFromType(issuer, 'CN');
+
+	const serial = bufferToHexCodes(cert.serialNumber.valueBlock.valueHex);
+	const beginOn = cert.notBefore.value.toString();
+	const expireOn = cert.notAfter.value.toString();
+	console.log(typeof expireOn);
+
+	return {
+		'name'  : commonName,
+		'issuer': issuerName,
+		'serial': serial,
+		'begin' : beginOn,
+		'expire': expireOn,
+		'cert'  : rawCert
+	};
+}
+
+// cert type IODs for subject and issuer
+const typeIODs = {
+	'C' : '2.5.4.6',
+	'OU': '2.5.4.10',
+	'O' : '2.5.4.11',
+	'CN': '2.5.4.3',
+	'L' : '2.5.4.7',
+	'S' : '2.5.4.8',
+	'T' : '2.5.4.12',
+	'GN': '2.5.4.42',
+	'I' : '2.5.4.43',
+	'SN': '2.5.4.4',
+	'E-mail' : '1.2.840.113549.1.9.1'
+};
+
+function getCertValueFromType(subject, type) {
+	let typeIOD = typeIODs[type];
+	if(typeof typeIODs === 'undefined') typeIOD = type;
+
+	const typeValue = subject.find(e => e.type === typeIOD);
+
+	if (typeof typeValue === 'undefined') return null;
+	else return typeValue.value.valueBlock.value;
 }
