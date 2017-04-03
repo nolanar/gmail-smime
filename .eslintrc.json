@@ -31,6 +31,9 @@
 		"ENV": true,
 		"chrome": true,
 		"console": true,
-		"InboxSDK": true
+		"InboxSDK": true,
+		"runningAsExtension": true,
+		"$": true,
+		"bootbox": true
 	}
 }

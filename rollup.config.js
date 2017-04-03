@@ -4,10 +4,9 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 
 export default {
-	entry: 'src/app.js',
-	dest: 'build/js/app.min.js',
+	entry: 'src/main.js',
+	dest: 'build/js/main.min.js',
 	format: 'iife',
-	sourceMap: 'inline',
 	plugins: [
 		resolve({
 			jsnext: true,
@@ -20,5 +19,5 @@ export default {
 				'lib/**',
 			]
 		}),
-	],
+	]
 };
