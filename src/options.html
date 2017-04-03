@@ -61,14 +61,28 @@
 								<span class="glyphicon glyphicon-remove"></span> Delete
 							</button>
 						</div>
+
 						<table id="certTable"
+								data-toggle="table"
 								data-pagination="true"
 								data-search="true"
 								data-show-refresh="true"
 								data-show-columns="true"
 								data-toolbar="#toolbar"
-								data-resizable="true">
-							</table>
+								data-sort-name="name"
+								data-sort-order="asc"
+								data-click-to-select="true">
+							<thead>
+								<tr>
+									<th data-field="state" data-checkbox="true"></th>
+									<th data-field="name" data-sortable="true">Certificate Name</th>
+									<th data-field="serial" data-sortable="true">Serial Number</th>
+									<th data-field="begin" data-sortable="true">Begins On</th>
+									<th data-field="expire" data-sortable="true">Expires On</th>
+								</tr>
+							</thead>
+						</table>
+
 					</div>
 				</div>
 

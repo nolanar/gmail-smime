@@ -190,33 +190,7 @@ function optionsMain() {
 	let certType;
 	let selections = [];
 
-	// Initialise table headers and data
-	const columns = [
-		[{
-			'field': 'state',
-			'checkbox': 'true'
-		},
-		{
-			'field': 'name',
-			'title': 'Certificate Name',
-		},
-		{
-			'field': 'serial',
-			'title': 'Serial Number',
-		}, {
-			'field': 'begin',
-			'title': 'Begins On',
-		}, {
-			'field': 'expire',
-			'title': 'Expires On',
-		}]
-	];
-
 	$(() => {
-		$('#certTable').bootstrapTable({
-			columns: columns
-		});
-
 		$table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', () => {
 			$button.prop('disabled', !$table.bootstrapTable('getSelections').length);
 			// save your data, here just save the current page
