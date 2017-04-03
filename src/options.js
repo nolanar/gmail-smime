@@ -18,6 +18,7 @@ let testCerts = [
 ];
 
 storage.set({'signature': testCerts});
+storage.set({'encryption': testCerts});
 
 // identifiers
 const $table = $('#certTable');
@@ -75,16 +76,15 @@ $(() => {
 function selectCertTable(id) {
 	certType = id;
 
-	storage.get(id, result => {
-		const items = result[id];
+	$table.bootstrapTable('showLoading');
+	storage.get(certType, result => {
+		const items = result[certType];
 		if (items !== undefined) {
 			$table.bootstrapTable('load', items);
 		} else {
 			$table.bootstrapTable('removeAll');
 		}
 	});
-
-	$table.bootstrapTable('showLoading');
 	$table.bootstrapTable('hideLoading');
 }
 
@@ -100,7 +100,10 @@ $(() => {
 
 				storage.get(certType, result => {
 					const itemsOld = result[certType];
-					const itemsNew = itemsOld.filter(item => {ids.includes(item.name);});
+					const itemsNew = itemsOld.filter(item => {
+						return !ids.includes(item.name);
+					});
+
 					if (itemsNew.length > 0) {
 						storage.set({[certType]: itemsNew});
 					} else {
