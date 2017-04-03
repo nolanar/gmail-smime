@@ -1,20 +1,34 @@
+// config
+let storage = chrome.storage.local;
+
+// TEST DATA
+let testCerts = [
+	{
+		"name": "alice@example.com",
+		"serial": "00:BF:8C:89:E5:E2:85:6E:0F",
+		"begin": "31/03/17",
+		"expire": "30/04/17"
+	},
+	{
+		"name": "bob@example.com",
+		"serial": "00:BF:8C:89:E5:E2:85:6E:0E",
+		"begin": "31/03/17",
+		"expire": "30/04/17"
+	},
+];
+
+storage.set({'signature': testCerts});
+
+// identifiers
+const $table = $('#certTable');
+const	$button = $('#deleteButton');
+
+// variables
+let certType;
+let selections = [];
 
 // Initialise table headers and data
-
-let data = [{
-	"name": "nolanar@tcd.ie",
-	"counts": {
-		"stargazers_count": "526",
-		"forks_count": "122"
-	},
-}, {
-	"name": "multiple-select",
-	"counts": {
-		"stargazers_count": "288",
-		"forks_count": "150"
-	}
-}];
-let columns = [
+const columns = [
 	[{
 		"field": "state",
 		"checkbox": "true"
@@ -37,26 +51,63 @@ let columns = [
 
 $(() => {
 	$('#certTable').bootstrapTable({
-		data: data,
 		columns: columns
-	});
-});
-
-let selections = [];
-let $table = $('#certTable');
-let	$button = $('#deleteButton');
-
-$(() => {
-	$button.click(() => {
-		let ids = $.map($table.bootstrapTable('getSelections'), row => {return row.name;});
-		$table.bootstrapTable('remove', {field: 'name', values: ids});
 	});
 
 	$table.on('check.bs.table uncheck.bs.table check-all.bs.table uncheck-all.bs.table', () => {
-		console.log(!$table.bootstrapTable('getSelections').length);
 		$button.prop('disabled', !$table.bootstrapTable('getSelections').length);
 		// save your data, here just save the current page
 		// selections = getIdSelections();
 		// push or splice the selections if you want to save all data selections
+	});
+});
+
+// Certificate type tabs
+$(() => {
+	// when page first loads
+	selectCertTable($('#certTabs li.active a').attr('id'));
+	// when tab clicked
+	$('#certTabs').on('click', 'a', function(){
+		selectCertTable($(this).attr('id'));
+	})
+});
+
+function selectCertTable(id) {
+	certType = id;
+
+	storage.get(id, result => {
+		const items = result[id];
+		if (items !== undefined) {
+			$table.bootstrapTable('load', items);
+		} else {
+			$table.bootstrapTable('removeAll');
+		}
+	});
+
+	$table.bootstrapTable('showLoading');
+	$table.bootstrapTable('hideLoading');
+}
+
+// delete cert button
+$(() => {
+	$button.click(() => {
+		bootbox.confirm("Are you sure you want to delete these?", result => {
+			if (true) {
+
+				const ids = $.map($table.bootstrapTable('getSelections'), row => {return row.name;});
+				$table.bootstrapTable('remove', {field: 'name', values: ids});
+				$button.prop('disabled', !$table.bootstrapTable('getSelections').length);
+
+				storage.get(certType, result => {
+					const itemsOld = result[certType];
+					const itemsNew = itemsOld.filter(item => {ids.includes(item.name);});
+					if (itemsNew.length > 0) {
+						storage.set({[certType]: itemsNew});
+					} else {
+						storage.remove(certType);
+					}
+				});
+			}
+		});
 	});
 });

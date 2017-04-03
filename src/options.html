@@ -46,6 +46,13 @@
 						<h3 class="panel-title">Certificates</h3>
 					</div>
 					<div class="panel-body">
+
+						<ul id="certTabs" class="nav nav-tabs">
+							<li role="presentation" class="active"><a id="authority" data-toggle="tab" href="">Authorities</a></li>
+							<li role="presentation"><a id="signature" data-toggle="tab" href="">Signatures</a></li>
+							<li role="presentation"><a id="encryption" data-toggle="tab" href="">Encryptions</a></li>
+						</ul>
+
 						<div id="toolbar">
 							<button id="addButton" class="btn btn-success">
 								<span class="glyphicon glyphicon-plus"></span> Add
@@ -84,6 +91,7 @@
 		<script src="/lib/js/jquery.min.js"></script>
 		<script src="/lib/js/bootstrap.min.js"></script>
 		<script src="/lib/js/bootstrap-table.min.js"></script>
+		<script src="/lib/js/bootbox.min.js"></script>
 
 		<!-- my js -->
 		<script src="/src/options.js"></script>
