@@ -6,8 +6,11 @@
 		<link rel="stylesheet" href="/lib/css/bootstrap.min.css">
 		<!-- Optional theme -->
 		<!-- <link rel="stylesheet" href="/lib/css/bootstrap-theme.min.css"> -->
+		<!-- Kartik file input -->
+		<link rel="stylesheet" href="/lib/css/fileinput.min.css">
 		<!-- Bootstrap table extension -->
 		<link rel="stylesheet" href="/lib/css/bootstrap-table.min.css">
+
 		<style type="text/css">
 			body { padding-top: 70px; }
 		</style>
@@ -23,9 +26,9 @@
 						<a class="navbar-brand" href="#">Gmail S/MIME</a>
 					</div>
 
-		      <ul class="nav navbar-nav navbar-right">
-	        	<li><a href="#">View on GitHub</a></li>
-	        </ul>
+					<ul class="nav navbar-nav navbar-right">
+						<li><a href="#">View on GitHub</a></li>
+					</ul>
 				
 				</div>
 			</nav>
@@ -38,6 +41,23 @@
 					</div>
 					<div class="panel-body">
 
+						<label class="control-label">Certificate</label>
+						<input id="accountCert" type="file" class="file" 
+								data-show-preview="false"
+								data-show-remove="false"
+								data-show-upload="false">
+
+						<label class="control-label">Private Key</label>
+						<input id="accountKey" type="file" class="file" disabled
+								data-show-preview="false"
+								data-show-remove="false"
+								data-show-upload="false">
+
+						<label id="updateAccountButton" class="btn btn-success" disabled
+								style="margin-top: 15px">Update</label>
+						<label id="clearButton" class="btn btn-primary"
+								style="margin-top: 15px">Clear</label>
+								
 					</div>
 				</div>
 
@@ -93,6 +113,7 @@
 						<h3 class="panel-title">Utilities</h3>
 					</div>
 					<div class="panel-body">
+
 						<ul class=>
 						Todo: add key pair generation, sign request
 						</ul>
@@ -106,6 +127,7 @@
 		<!-- load scripts at end of page for preformance -->
 		<script src="/lib/js/jquery.min.js"></script>
 		<script src="/lib/js/bootstrap.min.js"></script>
+		<script src="/lib/js/fileinput.min.js"></script>
 		<script src="/lib/js/bootstrap-table.min.js"></script>
 		<script src="/lib/js/bootbox.min.js"></script>
 
