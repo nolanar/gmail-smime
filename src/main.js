@@ -10,6 +10,8 @@ if (typeof InboxSDK !== 'undefined') {
 	optionsMain();
 }
 
+let storage = chrome.storage.local;
+
 ////////////////////////////////////////////
 //  Extension content JS
 ////////////////////////////////////////////
@@ -29,17 +31,49 @@ function contentMain() {
 
 	// action to take when a compose view is created
 	function composeViewHandler(composeView) {
+		// encrypt the message using AES-CBC and RSAES-OEAP
 		composeView.addButton({
 			title: 'Sign and Encrypt',
 			iconUrl: chrome.runtime.getURL('res/icon/icon-lock.png'),
 			onClick: event => {
-				const compView = event.composeView;
-				// event.composeView.insertTextIntoBodyAtCursor('Hello World!');
-				const subject = compView.getTextContent();
-				const blob = new Blob([subject], {type: 'text/html'});
-				blob.name = 'encrypted.asc';
-				// compView.setBodyText(subject);
-				compView.attachInlineFiles([blob]);
+				const recipient = composeView.getToRecipients()[0].emailAddress;
+				storage.get('encryption', result => {
+					if (typeof result['encryption'] === 'undefined') {
+						alert("No certificates found");
+						return;
+					}
+					const certs = result['encryption'];
+					const certObj = certs.find(e => e.name === recipient);
+					if (typeof certObj === 'undefined') {
+						alert(`No certificate found for ${recipient}`);
+						return;
+					}
+
+					const cert = parseCert(certObj.cert, false).cert;
+
+					const compView = event.composeView;
+					const content = stringToArrayBuffer(compView.getTextContent());
+
+					const cmsEnveloped = new EnvelopedData();
+					cmsEnveloped.addRecipientByCertificate(cert);
+					const alg = {name: "AES-CBC",	length: 128};
+					cmsEnveloped.encrypt(alg, content).then(() => {
+
+						const cmsContentSimpl = new ContentInfo();
+						cmsContentSimpl.contentType = "1.2.840.113549.1.7.3";
+						cmsContentSimpl.content = cmsEnveloped.toSchema();
+
+						const schema = cmsContentSimpl.toSchema();
+						const ber = schema.toBER(false);
+
+						const blob = new Blob([ber], {type: 'application/pkcs7-mime'});
+						blob.name = 'smime.p7m';
+						compView.attachInlineFiles([blob]);
+						compView.setBodyText('');
+					});
+
+
+				});
 			},
 			hasDropdown: true,
 			type: 'MODIFIER',
@@ -48,14 +82,15 @@ function contentMain() {
 	}
 
 	// action to take when a message is opened
-	function messageViewHandler(composeView) {
-		const attachments = composeView.getFileAttachmentCardViews();
+	function messageViewHandler(messageView) {
+		const attachments = messageView.getFileAttachmentCardViews();
 		const attach = attachments[0];
 		const filename = attach.getTitle();
 		const fileExt = filename.substr((~-filename.lastIndexOf('.') >>> 0) + 2);
 
+		// if the file is a pkcs7 envelope file, attempt to decrypt it
 		if (fileExt === 'p7m') {
-			console.log('Encrypted message detected');
+			messageView.getBodyElement().innerHTML = 'Decoding message...';
 			attach.getDownloadURL().then(url => {
 				
 				fetch(url).then(response => {
@@ -64,40 +99,39 @@ function contentMain() {
 				}).then(data => {
 
 					let asn1 = asn1js.fromBER(data);
-					console.log(asn1);
 					const cmsContentSimpl = new ContentInfo({ schema: asn1.result });
 					const cmsEnvelopedSimp = new EnvelopedData({ schema: cmsContentSimpl.content });
 
-					const privateKey = getPrivateKey();
-					const publicKey = getCert();
+					storage.get('account', result => {
+						if (typeof result['account'] === 'undefined') {
+							alert("Account certificate not set up. Go to extension options page.");
+							messageView.getBodyElement().innerHTML = 'Failed to decode';
+							return;
+						}
+						const account = result['account'];
 
-					asn1 = asn1js.fromBER(publicKey);
-					const cert = new Certificate({schema: asn1.result});
+						const key = stringToArrayBuffer(window.atob(account.key));
+						const cert = parseCert(account.cert, false).cert;
 
-					cmsEnvelopedSimp.decrypt(0, {
-						recipientCertificate: publicKey,
-						recipientPrivateKey: privateKey
-					}).then(
-						res => {
-							console.log(arrayBufferToString(res));
-						},
-						err => console.warn('Failed to decrypt: ' + err.name)
-					);
+						cmsEnvelopedSimp.decrypt(0, {
+							recipientCertificate: cert,
+							recipientPrivateKey: key
+						}).then(
+							res => {
+								messageView.getBodyElement().innerHTML = arrayBufferToString(res);
+							},
+							err => {
+								messageView.getBodyElement().innerHTML = 'Failed to decode: ' + err;
+							}
+						);
 
-					console.log(cmsContentSimpl);
+					});
 				}).catch(err => {
-					console.warn('Looks like there was a problem. Status Code: ' + err.message);
+					messageView.getBodyElement().innerHTML = 'Failed to decode: ' + err;
+					loader.destroy();
 				});
 			});
 		}
-
-		// attach.addButton({
-		//  tooltip: 'Decrypt Message',
-		//  iconUrl: chrome.runtime.getURL('icon-lock.png'),
-		//  onClick: event => {
-		//      event.getDownloadURL().then(url => {window.alert(url);});
-		//  }
-		// });
 	}
 }
 
@@ -124,8 +158,8 @@ function optionsMain() {
 		},
 	];
 
-	storage.set({'signature': testCerts});
-	storage.set({'encryption': testCerts});
+	// storage.set({'signature': testCerts});
+	// storage.set({'encryption': testCerts});
 
 	// identifiers
 	const $table = $('#certTable');
@@ -165,6 +199,7 @@ function optionsMain() {
 		});
 	});
 
+	// Switch cert table being viewed
 	function selectCertTable(id) {
 		certType = id;
 
@@ -272,6 +307,7 @@ function optionsMain() {
 		}
 	});
 
+	// update account button
 	$(() => {
 		$('#updateAccountButton').click(() => {
 			if (uploadEnabled) {
@@ -284,7 +320,7 @@ function optionsMain() {
 					callback: result => {
 						if (result) {
 							storage.set({account: {cert: selectedCert, key: selectedKey} });
-							clearUploadInput()
+							clearUploadInput();
 						}
 					}
 				});				
@@ -292,6 +328,7 @@ function optionsMain() {
 		});
 	});
 
+	// clear upload input button
 	$(() => {
 		$('#clearButton').click(() => {
 			clearUploadInput();
@@ -319,7 +356,37 @@ function optionsMain() {
 				// parse the cert and get cert object
 				try {
 					const parsedCert = parseCert(certContent);
-					storeCert(parsedCert);
+					// self signed cert
+					if (parsedCert.name === parsedCert.issuer) {
+						storeCert(parsedCert);
+					} else {
+						// check if signed by a stored authority
+						storage.get('authority', result => {
+							let auths = result['authority'];
+							if (typeof auths === 'undefined') {
+								bootbox.alert({ 
+									title: 'Error',
+									message: '<p class="lead">No certificate authorities found</p>'
+								});
+								return;
+							}
+							const auth = auths.find(e => e.name === parsedCert.issuer);
+							if (typeof auth === 'undefined') {
+								bootbox.alert({ 
+									title: 'Error',
+									message: `<p class="lead">Certificate authority ${parsedCert.name} not found</p>`
+								});
+							} 
+							else if (!verifyAuth(parsedCert.cert, auth.cert)) {
+								bootbox.alert({ 
+									title: 'Error',
+									message: `<p class="lead">Certificate not singed by stored authority ${parsedCert.name}</p>`
+								});
+							} else {
+								storeCert(parsedCert);
+							}
+						});
+					}
 				} catch (err) {
 					bootbox.alert({ 
 						title: 'Error',
@@ -376,13 +443,13 @@ function optionsMain() {
 //  Crypto util functions
 ////////////////////////////////////////////
 
+// parse a x.509 cert
 function parseCert(rawCert, rawReturn=true) {
 	const asciiCert = rawCert.replace(/(-----(BEGIN|END)( NEW)? CERTIFICATE-----|\n)/g, '');
 	const certBuffer = stringToArrayBuffer(atob(asciiCert));
 
 	let asn1 = asn1js.fromBER(certBuffer);
 	const cert = new Certificate({ schema: asn1.result });
-	console.log(cert);
 
 	const subject = cert.subject.typesAndValues;
 	const issuer = cert.issuer.typesAndValues;
@@ -393,7 +460,6 @@ function parseCert(rawCert, rawReturn=true) {
 	const serial = bufferToHexCodes(cert.serialNumber.valueBlock.valueHex);
 	const beginOn = cert.notBefore.value.toString();
 	const expireOn = cert.notAfter.value.toString();
-	console.log(typeof expireOn);
 
 	return {
 		'name'  : commonName,
@@ -430,8 +496,14 @@ function getCertValueFromType(subject, type) {
 	else return typeValue.value.valueBlock.value;
 }
 
+// parse a pkcs#8 cert
 function parseKey(rawKey) {
 	const asciiKey = rawKey.replace(/(-----(BEGIN|END)( NEW)? PRIVATE KEY-----|\n)/g, "");
-	const keyBuffer = window.atob(asciiKey);
-	return keyBuffer;
+	return asciiKey;
+}
+
+// check that the new cert was issued by claimed issuer
+function verifyAuth(auth, cert) {
+	// TODO: implement
+	return true;
 }
